@@ -499,6 +499,7 @@ private :
     bool    general_max_8bit_constraint_flag;
     bool    RapPicFlag;
     bool    first_slice_segment_in_pic_flag;
+    int32u  general_profile_compatibility_flags;
 };
 
 } //NameSpace

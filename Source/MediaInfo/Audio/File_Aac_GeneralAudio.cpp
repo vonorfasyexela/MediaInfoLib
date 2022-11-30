@@ -290,7 +290,7 @@ void File_Aac::program_config_element()
         Infos["Channel(s)"].From_Number(Channels);
         Infos["ChannelPositions"]=Channels_Positions;
         Infos["ChannelPositions/String2"]=Channels_Positions2;
-        Infos["ChannelLayout"]=ChannelLayout;
+        Infos["ChannelLayout"]=ChannelLayout;        
 
         if (!Infos["Format_Settings_SBR"].empty())
         {

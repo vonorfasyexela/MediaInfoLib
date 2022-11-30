@@ -242,6 +242,9 @@ void File_Aac::Streams_Finish()
         }
         Streams_Finish_Conformance();
     #endif
+
+    Ztring CodecStringRFC6381 = Ztring("mp4a.40.") + Ztring().From_Number(audioObjectType);
+    Fill(Stream_Audio, 0, Audio_Codec_String_RFC6381, CodecStringRFC6381);
 }
 
 //***************************************************************************

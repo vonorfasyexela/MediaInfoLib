@@ -14,6 +14,7 @@
 
 //---------------------------------------------------------------------------
 #include "MediaInfo/Setup.h"
+#include <iostream>
 //---------------------------------------------------------------------------
 
 //***************************************************************************
@@ -807,6 +808,14 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
     Profile+=__T("@L")+Ztring().From_Number(((float)(*seq_parameter_set_Item)->level_idc)/10, ((*seq_parameter_set_Item)->level_idc%10)?1:0);
     Fill(Stream_Video, 0, Video_Format_Profile, Profile);
     Fill(Stream_Video, 0, Video_Codec_Profile, Profile);
+
+    char buf[50];
+    std::snprintf(buf, sizeof(buf) + 1, "avc1.%.2x%.2x%.2x", (*seq_parameter_set_Item)->profile_idc, 
+                                                             (*seq_parameter_set_Item)->constraint_set3_flag << 3, 
+                                                             (*seq_parameter_set_Item)->level_idc);
+    Ztring CodecStringRFC6381 = Ztring(buf);
+    Fill(Stream_Video, 0, Video_Codec_String_RFC6381, CodecStringRFC6381);
+
     Fill(Stream_Video, StreamPos_Last, Video_Width, Width);
     Fill(Stream_Video, StreamPos_Last, Video_Height, Height);
     if ((*seq_parameter_set_Item)->frame_crop_left_offset || (*seq_parameter_set_Item)->frame_crop_right_offset)

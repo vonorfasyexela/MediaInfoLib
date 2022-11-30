@@ -383,6 +383,69 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
     Fill(Stream_Video, 0, Video_Codec_Profile, Profile);
     Fill(Stream_Video, StreamPos_Last, Video_Width, Width);
     Fill(Stream_Video, StreamPos_Last, Video_Height, Height);
+
+    uint32_t general_profile_space = (*seq_parameter_set_Item)->profile_space;
+    uint32_t general_profile_idc = (*seq_parameter_set_Item)->profile_idc;
+    bool general_tier_flag = (*seq_parameter_set_Item)->tier_flag;
+    uint32_t general_level_idc = (*seq_parameter_set_Item)->level_idc;
+
+    Ztring codec_string = "hvc1";
+
+    // 1. Profile.
+    codec_string += '.';
+    if (general_profile_space > 0) {
+        const char* spaces = "ABC";
+        codec_string += spaces[general_profile_space - 1];
+    }
+    codec_string += Ztring().From_Number(general_profile_idc);
+    
+    // 2. Profile_compatibility.
+    codec_string += '.';
+
+    int32u x = general_profile_compatibility_flags;
+    x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1);
+    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2);
+    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4);
+    int8u gpc_flags[4] = { static_cast<int8u>((x) & 0xFF), 
+                           static_cast<int8u>((x >> 8) & 0xFF), 
+                           static_cast<int8u>((x >> 16) & 0xFF), 
+                           static_cast<int8u>((x >> 24) & 0xFF) };
+
+    bool seen_non_0_flag = false;
+    for (int i = 0; i < 4; i++) {
+        if (!seen_non_0_flag) {
+            if (gpc_flags[i]) {
+                codec_string += Ztring().From_Number(gpc_flags[i], 16);
+                seen_non_0_flag = true;
+            }
+        } else {
+            char buf[3];
+            sprintf(buf, "%02X", gpc_flags[i]);
+            codec_string += Ztring(buf);
+        }
+    }
+    if (!seen_non_0_flag) {
+        codec_string += Ztring("0");
+    }
+
+    // 3. tier and level.
+    codec_string += '.';
+    codec_string += general_tier_flag ? 'H' : 'L';
+    codec_string += Ztring().From_Number(general_level_idc);
+
+    // 4. Constraint bytes.
+    uint8_t indicator = (*seq_parameter_set_Item)->general_progressive_source_flag        << 7 |
+                        (*seq_parameter_set_Item)->general_interlaced_source_flag         << 6 |
+                        (*seq_parameter_set_Item)->general_frame_only_constraint_flag     << 4 |
+                        (*seq_parameter_set_Item)->general_max_8bit_constraint_flag       << 1;
+
+    if (indicator != 0) {
+        codec_string += '.';
+        codec_string += Ztring().From_Number(indicator, 16);
+    }
+    
+    Fill(Stream_Video, 0, Video_Codec_String_RFC6381, codec_string);
+
     if ((*seq_parameter_set_Item)->conf_win_left_offset || (*seq_parameter_set_Item)->conf_win_right_offset)
         Fill(Stream_Video, StreamPos_Last, Video_Stored_Width, (*seq_parameter_set_Item)->pic_width_in_luma_samples);
     if ((*seq_parameter_set_Item)->conf_win_top_offset || (*seq_parameter_set_Item)->conf_win_bottom_offset)
@@ -3136,17 +3199,19 @@ void File_Hevc::profile_tier_level(int8u maxNumSubLayersMinus1)
     Get_S1 (2,  profile_space,                                  "general_profile_space");
     Get_SB (    tier_flag,                                      "general_tier_flag");
     Get_S1 (5,  profile_idc,                                    "general_profile_idc");
+    general_profile_compatibility_flags = 0;
     Element_Begin1("general_profile_compatibility_flags");
-        for (int8u profile_pos=0; profile_pos<32; profile_pos++)
+        for (int8u profile_pos=0; profile_pos<32; profile_pos++) {
+            bool bit = false;
+            Get_SB(bit, "dummy");
+            general_profile_compatibility_flags |= (bit << (31 - profile_pos));
             if (profile_pos==profile_idc)
             {
-                bool general_profile_compatibility_flag;
-                Get_SB (    general_profile_compatibility_flag, "general_profile_compatibility_flag");
+                bool general_profile_compatibility_flag = bit;
                 //if (!general_profile_compatibility_flag && !profile_space)  //found some files without this flag, ignoring the test for the moment (not really important)
                 //    Trusted_IsNot("general_profile_compatibility_flag not valid");
             }
-            else
-                Skip_SB(                                        "general_profile_compatibility_flag");
+        }
     Element_End0();
     Element_Begin1("general_profile_compatibility_flags");
         Get_SB (    general_progressive_source_flag,            "general_progressive_source_flag");

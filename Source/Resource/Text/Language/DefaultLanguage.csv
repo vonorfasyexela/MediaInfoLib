@@ -275,6 +275,7 @@ Codec_Settings_Matrix;Codec settings, Matrix
 Codec_Settings_PacketBitStream;Codec settings, Packet bitstream
 Codec_Settings_QPel;Codec settings, QPel
 Codec_Settings_Sign;Codec settings, Sign
+Codec_String_RFC6381;Codec String RFC6381
 Codec_Url;Weblink for codec
 CodecConfigurationBox;Codec configuration box
 CodecID;Codec ID

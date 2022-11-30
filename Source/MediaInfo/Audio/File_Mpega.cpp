@@ -399,6 +399,8 @@ void File_Mpega::Streams_Fill()
         }
     }
 
+    Fill(Stream_Audio, 0, Audio_Codec_String_RFC6381, "mp4a.40.33");
+
     //Bitrate mode
     Fill(Stream_Audio, 0, Audio_BitRate_Mode, BitRate_Mode);
     Fill(Stream_Audio, 0, Audio_BitRate_Minimum, BitRate_Minimum);
